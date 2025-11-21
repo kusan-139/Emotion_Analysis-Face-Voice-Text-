@@ -13,3 +13,4 @@ tqdm
 transformers
 librosa
 soundfile
+gunicorn
