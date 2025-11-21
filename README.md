@@ -1,85 +1,215 @@
-# Facial Emotion Recognition with Wellbeing-Aware Insights  
-*(FER2013 + RAF-DB Combined Dataset)*
+# Multimodal Emotion & Wellbeing Analysis  
+*(Face · Text · Voice — Deep Learning + HuggingFace)*
 
-## Abstract
+## 🌟 Overview
 
-This project implements a **production-ready facial emotion recognition system**
-using **deep learning (ResNet-18, PyTorch)** and a **combined dataset**
-from **FER2013** and **RAF-DB (basic subset)**.
+This project is a **full multimodal emotion‑analysis system** supporting:
 
-On top of emotion recognition, it provides **non-clinical wellbeing indicators**
-(positivity, negativity, neutrality scores and a simple concern level) based on
-recent visible emotional patterns.
+### ✅ **1. Facial Emotion Recognition (PyTorch · ResNet‑18)**  
+- Uses combined **FER2013 + RAF‑DB** dataset  
+- Grad‑CAM visualization  
+- Face detection (OpenCV Haar Cascade)  
+- Produces emotion + wellbeing indicator  
 
-> ⚠️ **Strong Disclaimer**  
-> This project does **NOT** diagnose any mental health or medical condition.  
-> All outputs are informational only and must **never** be used as a substitute
-> for professional advice, diagnosis, or treatment.
+### ✅ **2. Text Emotion Analysis (HuggingFace)**  
+- Uses a **local text‑classification model** (DistilBERT fine‑tuned) &  **hf-local model**
+- Works fully offline  
+- Produces emotion + tone probabilities  
+- Integrates into wellbeing scoring  
+
+### ✅ **3. Voice Tone Emotion Analysis (Audio CNN or HF Model)**  
+- Two modes:
+  - **Fast Mode** → Local CNN classifier  
+  - **Accurate Mode** → Offline HuggingFace Wav2Vec2 model  
+- Returns emotion + prosody‑based emotional tone  
+
+### 🎯 **Wellbeing Insight Engine**
+Tracks recent predicted emotions (sliding window of 50 samples) and generates:
+- Positivity trend  
+- Negative spikes  
+- Stability rating  
+- Simple non‑clinical wellbeing indicator  
+
+> ⚠️ **Disclaimer:**  
+> This project does **NOT** diagnose mental health or medical conditions.  
+> It provides informational insights only.
 
 ---
 
-## 1. Emotion Recognition Overview
+# 📌 Features
 
-Facial emotion recognition aims to classify expressions such as:
+## 🔹 Facial Emotion Features
+- ResNet‑18‑based classifier  
+- Preprocessing (normalization, resizing)  
+- Grad‑CAM heatmaps  
+- Real‑time webcam mode (`/live`)
 
-- Angry
-- Disgust
-- Fear
-- Happy
-- Sad
-- Surprise
-- Neutral
-
-This project uses **transfer learning** from ImageNet-pretrained ResNet-18,
-fine-tuned on a combined facial dataset, to provide robust recognition.
+## 🔹 Text Emotion Features
+- Local HuggingFace emotion model  
+- Supports multiple emotions (happy, sad, anger, fear, neutral, etc.)  
+- Lightweight inference  
+- Can process any free‑text description  
 
 ---
 
-## 2. Combined Dataset: FER2013 + RAF-DB
+## 🔹 Voice Emotion Features
+### 🎙️ Fast Mode (Local CNN)
+- MFCC‑based  
+- Lightweight & fast  
 
-### FER2013
+### 🎙️ Accurate Mode (HF Wav2Vec2)
+- Works offline  
+- Better accuracy  
+- Slower inference  
 
-- ~36k grayscale 48×48 images
-- 7 emotion classes (0–6)
-- Provided as `fer2013.csv` with columns: `emotion`, `pixels`, `Usage`
+Example Output:
+```
+Emotion: angry
+Probabilities: { angry: 0.74, sad: 0.10, neutral: 0.08, ... }
+```
 
-### RAF-DB (Real-world Affective Faces Database)
+---
 
-- ~30k high-quality RGB images
-- We use the **basic emotion subset** only (no compound emotions)
-- Each image has a label in `list_patition_label.txt`
+# 📁 Project Structure
 
-### Unified Label Mapping
+```
+facial-emotion-wellbeing/
+│
+├── app.py
+├── config.py
+├── mental_health_insights.py
+├── merge_datasets.py
+├── data/
+|   ├── fer2013/ (Face)
+|   ├── rafdb/ (Face)
+|   ├── savee/ (Audio)
+|   ├──    / (Text)
+|
+│
+├── models/
+│   ├── emotion_model.py
+│   ├── hf_text_model
+|   ├── hf_audio_model
+|   ├── trained_model.pth
+|   └── audio_model.pth
+│
+├── multimodal/
+│   ├── text_emotion.py
+|   ├── audio_emotion.py
+│   └── audio_emotion.py
+│
+├── static/
+│   ├── css/
+│   ├── js/
+│   ├── results/   ← stores GradCAM & original images
+│   └── audio/     ← stores uploaded/recorded audio
+|
+├── inference/
+|   ├── predict_singl.py
+|
+├── training/
+|   ├── evaluate.py
+|   ├── evaluate_audio.py
+|   ├── evaluate_text.py
+|   ├── train.py
+|   ├── train_audio.py
+|   ├── train_text.py
+|   ├── utils.py    
+|
+├── templates/
+│   ├── index.html
+│   ├── upload.html
+│   ├── text.html
+│   ├── audio.html
+│   ├── live.html
+|   ├── text_unavailable.py
+│   ├── result.html
+│   ├── result_text.html
+│   └── result_audio.html
+│
+└── README.md
+```
 
-All emotions are mapped to a consistent 7-class scheme:
+---
 
-| Index | Label    |
-|-------|----------|
-| 0     | Angry    |
-| 1     | Disgust  |
-| 2     | Fear     |
-| 3     | Happy    |
-| 4     | Sad      |
-| 5     | Surprise |
-| 6     | Neutral  |
+# 🚀 Installation
 
-All images are resized and normalized to **224×224 RGB**.
+```
+git clone <repo-url>
+cd 
+pip install -r requirements.txt
+```
 
-Final combined dataset structure:
+---
 
-```text
-dataset_combined/
+# ▶️ Run the Application
+
+```
+python app.py
+```
+
+App runs at:
+
+```
+http://127.0.0.1:5000
+```
+
+---
+
+# 🧠 Wellbeing Indicator Logic
+
+Based on last 50 emotions:
+
+- Repeated **negative emotion spikes** → “Low stability”
+- Balanced mix of emotions → “Neutral / Stable”
+- Majority positive emotions → “Good wellbeing trend”
+- Sudden shifts → “Volatile emotional pattern”
+
+Returns:
+```
+{
+  "wellbeing_indicator": "Medium Concern",
+  "insight_text": "Recent patterns show elevated sadness and anger..."
+}
+```
+
+---
+
+# 📦 Datasets Used (Face Model)
+
+### FER2013 + RAF‑DB (basic)
+Both merged into 7 emotions:
+```
+angry, disgust, fear, happy, sad, surprise, neutral
+```
+
+Dataset folder structure:
+```
+dataset/
   train/
-    angry/
-    disgust/
-    fear/
-    happy/
-    sad/
-    surprise/
-    neutral/
   val/
-    angry/
-    ...
   test/
-    angry/
-    ...
+```
+
+---
+
+# 📝 License
+MIT License 
+
+---
+
+# ❤️ Credits
+- PyTorch  
+- HuggingFace Transformers  
+- OpenCV  
+- FER2013 dataset  
+- RAF‑DB dataset  
+
+---
+
+If you want, I can also generate:  
+✔ Badges  
+✔ Screenshots  
+✔ Model architecture diagrams  
+✔ API route documentation
+
