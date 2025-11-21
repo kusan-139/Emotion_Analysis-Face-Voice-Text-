@@ -15,5 +15,4 @@ data/
 training_plots/
 results/
 static/results/
-models/trained_model.pth
 models/best_model.pth
