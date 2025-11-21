@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Camera - Emotion Recognition</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- RESET & VARIABLES --- */
+        :root {
+            --bg-color: #05050a;
+            --card-bg: #0d1117;
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+            --accent-blue: #2f80ed;
+            --border-color: #30363d;
+            --warning-bg: rgba(68, 19, 19, 0.6);
+            --warning-border: #8c2828;
+            --warning-text: #ffadad;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 0%, #1a2236 0%, #05050a 80%);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR NAVIGATION --- */
+        .sidebar {
+            position: fixed;
+            left: -280px;
+            top: 0;
+            width: 280px;
+            height: 100%;
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-color);
+            padding: 80px 20px 20px;
+            transition: left 0.4s ease;
+            z-index: 1000;
+        }
+        .sidebar.active { left: 0; }
+        .nav-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 20px; display: block; }
+        .nav-link { display: flex; align-items: center; gap: 15px; color: var(--text-main); text-decoration: none; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; transition: background 0.2s; }
+        .nav-link:hover { background-color: rgba(255,255,255,0.05); }
+        .nav-link.active { border-left: 3px solid var(--accent-blue); background-color: rgba(47, 128, 237, 0.1); }
+        .nav-link i { width: 20px; text-align: center; color: var(--text-muted); }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .overlay.active { opacity: 1; pointer-events: auto; }
+
+        /* --- TOP NAVIGATION BUTTONS (Updated Size & Color) --- */
+        .top-nav {
+            position: absolute;
+            top: 30px; left: 30px; right: 30px;
+            display: flex; justify-content: space-between;
+            z-index: 500;
+        }
+        
+        .circle-btn {
+            width: 55px; /* Bigger size */
+            height: 55px;
+            border-radius: 50%;
+            background-color: #1c2128;
+            border: 1px solid #30363d;
+            color: #ffffff; /* White Icon */
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.3s; text-decoration: none;
+            font-size: 1.3rem; /* Bigger Icon */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .circle-btn:hover {
+            background-color: #30363d;
+            transform: scale(1.05);
+            border-color: var(--text-muted);
+        }
+
+        /* --- MAIN CONTAINER (Wider) --- */
+        .container {
+            background-color: var(--card-bg);
+            padding: 50px;
+            border-radius: 24px;
+            border: 1px solid #1e232a;
+            text-align: center;
+            max-width: 1100px; /* Increased Width */
+            width: 90%;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        /* --- WARNING BANNER (Single Line) --- */
+        .warning-banner {
+            background-color: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            color: var(--warning-text);
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            
+            /* FORCE SINGLE LINE */
+            white-space: nowrap;
+            max-width: 100%;
+        }
+        .warning-banner i { color: #ff6b6b; }
+
+        h1 { font-size: 2.5rem; font-weight: 600; margin-bottom: 10px; }
+        p.subtitle { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 40px; line-height: 1.5; }
+
+        /* --- VIDEO WRAPPER (Scaled Up) --- */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 800px; /* Increased max-width for the larger card */
+            aspect-ratio: 4/3;
+            margin: 0 auto;
+            background-color: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid #30363d;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        #video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none; 
+        }
+
+        .start-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: black;
+            z-index: 10;
+        }
+
+        .play-btn {
+            width: 80px; height: 80px; /* Slightly bigger play button */
+            border-radius: 50%;
+            background-color: var(--accent-blue);
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 30px rgba(47, 128, 237, 0.4);
+            transition: transform 0.2s;
+            margin-bottom: 15px;
+        }
+        .play-btn:hover { transform: scale(1.1); }
+
+        .start-text { color: var(--text-muted); font-size: 1rem; }
+
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+    
+    <div class="sidebar" id="sidebar">
+        <span class="nav-label">Navigation</span>
+        <a href="{{ url_for('upload_page') }}" class="nav-link">
+            <i class="fas fa-upload"></i> Upload Face Image
+        </a>
+        <a href="{{ url_for('live_page') }}" class="nav-link active">
+            <i class="fas fa-video"></i> Live Camera (Face)
+        </a>
+        <a href="{{ url_for('text_page') }}" class="nav-link">
+            <i class="fas fa-font"></i> Live Text Emotion
+        </a>
+        <a href="{{ url_for('audio_page') }}" class="nav-link">
+            <i class="fas fa-microphone"></i> Voice Emotion
+        </a>
+    </div>
+
+    <div class="top-nav">
+        <button class="circle-btn" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <a href="{{ url_for('index') }}" class="circle-btn">
+            <i class="fas fa-home"></i>
+        </a>
+    </div>
+
+    <div class="container">
+        
+        <div class="warning-banner">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Live wellbeing indicators are approximate and purely informational. They do not represent mental health or medical diagnoses.</span>
+        </div>
+
+        <h1>Live Camera (Face)</h1>
+        <p class="subtitle">
+            The camera feed below runs locally. Faces are detected in real time and labeled with predicted emotions.
+        </p>
+
+        <div class="video-wrapper">
+            <div class="start-overlay" id="start-overlay">
+                <button class="play-btn" onclick="startCamera()">
+                    <i class="fas fa-video"></i>
+                </button>
+                <span class="start-text">Tap to Start Camera</span>
+            </div>
+
+            <img id="video-feed" alt="Live video stream">
+        </div>
+
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        function startCamera() {
+            const videoImg = document.getElementById('video-feed');
+            const overlay = document.getElementById('start-overlay');
+            
+            overlay.style.display = 'none';
+            videoImg.style.display = 'block';
+            videoImg.src = "{{ url_for('video_feed') }}";
+        }
+    </script>
+
+</body>
+</html>

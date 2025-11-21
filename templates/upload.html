@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Face Image</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- RESET & VARIABLES --- */
+        :root {
+            --bg-color: #05050a;
+            --card-bg: #0d1117;
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+            --accent-blue: #2f80ed;
+            --border-color: #30363d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 0%, #1a2236 0%, #05050a 80%);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR NAVIGATION --- */
+        .sidebar {
+            position: fixed;
+            left: -280px;
+            top: 0;
+            width: 280px;
+            height: 100%;
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-color);
+            padding: 80px 20px 20px;
+            transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 1000;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .sidebar.active { left: 0; }
+
+        .nav-label {
+            font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);
+            letter-spacing: 1px; margin-bottom: 20px; display: block;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 15px; color: var(--text-main);
+            text-decoration: none; padding: 12px 15px; border-radius: 8px;
+            margin-bottom: 10px; transition: background 0.2s;
+        }
+
+        .nav-link:hover { background-color: rgba(255,255,255,0.05); }
+        .nav-link.active { border-left: 3px solid var(--accent-blue); background-color: rgba(47, 128, 237, 0.1); }
+        .nav-link i { width: 20px; text-align: center; color: var(--text-muted); }
+        .nav-link:hover i { color: var(--text-main); }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 999; opacity: 0;
+            pointer-events: none; transition: opacity 0.3s;
+        }
+        .overlay.active { opacity: 1; pointer-events: auto; }
+
+        /* --- TOP NAVIGATION BAR --- */
+        .top-nav {
+            position: absolute;
+            top: 30px; left: 30px; right: 30px; /* Increased margin */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 500;
+        }
+
+        /* UPDATED: Bigger & White Buttons */
+        .circle-btn {
+            width: 55px; /* Bigger size */
+            height: 55px;
+            border-radius: 50%;
+            background-color: #1c2128;
+            border: 1px solid #30363d; /* Added border definition */
+            color: #ffffff; /* White Icon */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            font-size: 1.3rem; /* Bigger Icon */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .circle-btn:hover {
+            background-color: #30363d;
+            transform: scale(1.05);
+            border-color: var(--text-muted);
+        }
+
+        /* --- MAIN CONTAINER (Updated size) --- */
+        .container {
+            text-align: center;
+            max-width: 900px; /* Much wider */
+            width: 90%;
+            background-color: var(--card-bg); /* Explicit card background */
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 50px; /* Increased padding */
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.8s ease;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            line-height: 1.5;
+        }
+
+        /* --- UPLOAD BOX --- */
+        .upload-box {
+            background-color: rgba(0,0,0,0.2); /* Slight dark tint */
+            border: 2px dashed #30363d;
+            border-radius: 20px;
+            padding: 60px 20px; /* Taller box */
+            position: relative;
+            transition: border-color 0.3s, background-color 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 350px; /* Taller minimum height */
+        }
+
+        .upload-box.drag-active {
+            border-color: var(--accent-blue);
+            background-color: rgba(47, 128, 237, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 4rem; /* Bigger icon */
+            color: #30363d;
+            margin-bottom: 25px;
+        }
+
+        .upload-text {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        /* --- BUTTONS --- */
+        .btn-select {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 14px 35px; /* Larger button */
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(47, 128, 237, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-select:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(47, 128, 237, 0.4);
+        }
+
+        .btn-submit {
+            margin-top: 25px;
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            display: none;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        .btn-submit:hover { background-color: #2ea043; }
+
+        #file-name-display {
+            margin-top: 15px;
+            color: var(--text-main);
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <span class="nav-label">Navigation</span>
+        <a href="{{ url_for('upload_page') }}" class="nav-link active">
+            <i class="fas fa-upload"></i> Upload Face Image
+        </a>
+        <a href="{{ url_for('live_page') }}" class="nav-link">
+            <i class="fas fa-video"></i> Live Camera (Face)
+        </a>
+        <a href="{{ url_for('text_page') }}" class="nav-link">
+            <i class="fas fa-font"></i> Live Text Emotion
+        </a>
+        <a href="{{ url_for('audio_page') }}" class="nav-link">
+            <i class="fas fa-microphone"></i> Voice Emotion
+        </a>
+    </div>
+
+    <div class="top-nav">
+        <button class="circle-btn" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <a href="{{ url_for('index') }}" class="circle-btn">
+            <i class="fas fa-home"></i>
+        </a>
+    </div>
+
+    <div class="container">
+        <h1>Upload Face Image</h1>
+        <p class="subtitle">Select an image with a clear view of a face. The system will detect the face and predict emotion.</p>
+
+        <form action="{{ url_for('predict_image_route') }}" method="post" enctype="multipart/form-data" id="upload-form">
+            
+            <div class="upload-box" id="drop-zone">
+                <i class="far fa-image upload-icon"></i>
+                <p class="upload-text">Drag & drop or click to select</p>
+                
+                <button type="button" class="btn-select" onclick="document.getElementById('file-input').click()">
+                    Select File
+                </button>
+                
+                <p id="file-name-display"></p>
+
+                <input type="file" id="file-input" name="image" accept="image/*" hidden onchange="handleFileSelect(this)">
+            </div>
+
+            <button type="submit" class="btn-submit" id="submit-btn">
+                <i class="fas fa-magic"></i> Analyze Emotion
+            </button>
+        </form>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const submitBtn = document.getElementById('submit-btn');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-active');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-active');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-active');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect(fileInput);
+            }
+        });
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                fileNameDisplay.innerText = `Selected: ${file.name}`;
+                fileNameDisplay.style.color = "#2f80ed";
+                submitBtn.style.display = "block";
+            }
+        }
+    </script>
+
+</body>
+</html>
