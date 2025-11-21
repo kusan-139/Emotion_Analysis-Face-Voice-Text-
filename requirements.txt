@@ -14,3 +14,4 @@ transformers
 librosa
 soundfile
 gunicorn
+av
