@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Audio Error</title>
+    <style>
+        body { background: #05050a; color: white; font-family: sans-serif; text-align: center; padding: 50px; }
+        .error-box { border: 1px solid #da3633; background: rgba(218, 54, 51, 0.1); padding: 20px; border-radius: 10px; display: inline-block; }
+        a { color: #2f80ed; }
+    </style>
+</head>
+<body>
+    <div class="error-box">
+        <h2>Audio Processing Error</h2>
+        <p>{{ error_message }}</p>
+        <br>
+        <a href="/audio">Try Again</a>
+    </div>
+</body>
+</html>
